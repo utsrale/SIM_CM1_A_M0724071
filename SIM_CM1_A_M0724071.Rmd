@@ -1,0 +1,316 @@
+---
+title: "Analisis Sakila: Pengaruh Rating Usia & Aktor Bintang Terhadap Kesuksesan Film"
+author: "Nama: Pancar Aura Zaki Ardika | NIM: M0724071 | Kelas: A"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+<style>
+/* Base Light Mode Styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff;
+  color: #333333;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+p, li {
+  text-align: justify;
+}
+h1, h2, h3, h4 {
+  color: #2c3e50;
+  font-weight: 600;
+  transition: color 0.4s ease;
+}
+.insight-box {
+  background-color: #f8f9fa;
+  border-left: 6px solid #e74c3c;
+  padding: 20px;
+  margin: 25px 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+.highlight-text {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* Dark Mode Toggle Button */
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: -40px;
+  margin-bottom: 20px;
+}
+.btn-toggle {
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.btn-toggle:hover {
+  background-color: #34495e;
+  transform: translateY(-2px);
+}
+
+/* Dark Mode Styles applied when body has .dark-mode class */
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode h4 {
+  color: #ffffff;
+}
+body.dark-mode .insight-box {
+  background-color: #1e1e1e;
+  border-left: 6px solid #ff6b6b;
+  box-shadow: 0 4px 6px rgba(255,255,255,0.05);
+}
+body.dark-mode .highlight-text {
+  color: #ff6b6b;
+}
+
+/* Fix DataTable text color in dark mode */
+body.dark-mode table.dataTable tbody tr {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+body.dark-mode table.dataTable thead th {
+  background-color: #2c2c2c;
+  color: #ffffff;
+}
+</style>
+
+<!-- Toggle Script -->
+<div class="theme-switch-wrapper">
+  <button class="btn-toggle" id="theme-toggle" onclick="toggleTheme()">🌙 Mode Gelap</button>
+</div>
+
+<script>
+function toggleTheme() {
+  const body = document.body;
+  const btn = document.getElementById("theme-toggle");
+  body.classList.toggle("dark-mode");
+  
+  if(body.classList.contains("dark-mode")) {
+    btn.innerHTML = "☀️ Mode Terang";
+  } else {
+    btn.innerHTML = "🌙 Mode Gelap";
+  }
+}
+</script>
+
+
+## 1. Deskripsi Insight (Data)
+
+Dalam analisis ini, kita menggunakan **Database Sakila** (Sistem Rental DVD) untuk menggali *insight* bisnis yang mendalam mengenai kesuksesan film. Pertanyaan utama yang ingin dijawab adalah:
+**"Apakah Rating Usia penonton dan kehadiran Aktor Bintang (aktor yang paling sering bermain film) memiliki pengaruh yang signifikan terhadap total pendapatan dan kesuksesan sewa film?"**
+
+Kita memecah analisis menjadi dua fokus utama:
+1. **Dampak Rating Usia**: Melihat distribusi pendapatan dan popularitas penyewaan berdasarkan kategori rating MPAA (G, PG, PG-13, R, NC-17).
+2. **Dampak "Star Power"**: Menguji hipotesis apakah aktor yang membintangi lebih banyak film secara otomatis akan mendatangkan pendapatan (*revenue*) yang lebih besar bagi toko rental.
+
+### Persamaan Matematis (LaTeX)
+
+Untuk mengukur kekuatan hubungan (korelasi linier) antara *jumlah film yang dibintangi seorang aktor* ($x$) dengan *total pendapatan yang dihasilkannya* ($y$), kita menggunakan rumus **Korelasi Pearson ($r_{xy}$)**:
+
+$$ r_{xy} = \frac{\sum_{i=1}^{n} (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^{n} (x_i - \bar{x})^2 \sum_{i=1}^{n} (y_i - \bar{y})^2}} $$
+
+Keterangan:
+
+- $n$: Jumlah sampel observasi (aktor)
+- $x_i$: Jumlah judul film unik yang diperankan aktor ke-$i$
+- $y_i$: Total pendapatan yang dihasilkan dari penyewaan film aktor ke-$i$
+- $\bar{x}, \bar{y}$: Nilai rata-rata dari variabel independen ($x$) dan dependen ($y$)
+
+---
+
+## 2. Persiapan Data dan Koneksi Database
+
+*(Pastikan package `RMySQL`, `DBI`, `dplyr`, `ggplot2`, `plotly`, dan `DT` sudah terinstall sebelum melakukan knit).*
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(DBI)
+library(RMySQL)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(DT)
+
+# Kustomisasi tema dasar ggplot dengan latar belakang transparan (mendukung Light/Dark mode)
+theme_transparent <- theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "transparent", color = NA),
+    panel.background = element_rect(fill = "transparent", color = NA),
+    legend.background = element_rect(fill = "transparent", color = NA),
+    text = element_text(color = "#7f8c8d"),
+    axis.text = element_text(color = "#7f8c8d"),
+    axis.title = element_text(color = "#7f8c8d", face = "bold"),
+    plot.title = element_text(color = "#95a5a6", face = "bold")
+  )
+```
+
+```{r connection}
+# Melakukan koneksi ke database Sakila di MySQL lokal
+conn <- dbConnect(MySQL(), 
+                  dbname = "sakila", 
+                  host = "localhost", 
+                  port = 3306,
+                  user = "root", 
+                  password = "Pancar.230205")
+```
+
+---
+
+## 3. Analisis Pertama: Dampak Rating Usia (MPAA)
+
+Analisis ini melihat bagaimana segmentasi usia penonton (berdasarkan rating film) memengaruhi pendapatan total.
+
+```{r fetch_data_rating}
+query_rating <- "
+SELECT 
+    f.rating,
+    COUNT(r.rental_id) AS total_rentals,
+    SUM(p.amount) AS total_revenue
+FROM film f
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+JOIN payment p ON r.rental_id = p.rental_id
+GROUP BY f.rating
+ORDER BY total_revenue DESC;
+"
+df_rating <- dbGetQuery(conn, query_rating)
+```
+
+### Visualisasi: Total Pendapatan Berdasarkan Rating Usia
+
+*Arahkan kursor (*hover*) pada diagram batang di bawah untuk melihat rincian datanya.*
+
+```{r viz1_interactive, fig.width=9, fig.height=5}
+p1 <- ggplot(df_rating, aes(x = reorder(rating, total_revenue), 
+                            y = total_revenue, 
+                            fill = rating,
+                            text = paste("Rating:", rating, 
+                                         "<br>Total Disewa:", total_rentals, "kali",
+                                         "<br>Pendapatan: $", format(total_revenue, big.mark=",")))) +
+  geom_bar(stat = "identity", color = "transparent", alpha = 0.85) +
+  coord_flip() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Pendapatan Penyewaan DVD per Rating Usia",
+       x = "Rating Usia (MPAA)", 
+       y = "Total Pendapatan ($)") +
+  theme_transparent +
+  theme(legend.position = "none")
+
+# Layout transparent untuk Plotly agar menyatu dengan Dark/Light Mode
+ggplotly(p1, tooltip = "text") %>% 
+  layout(paper_bgcolor = 'rgba(0,0,0,0)', plot_bgcolor = 'rgba(0,0,0,0)')
+```
+
+### 💡 Interpretasi Analisis Rating Usia
+
+<div class="insight-box">
+Berdasarkan analisis visual di atas, kita memperoleh kesimpulan penting:
+
+1. <span class="highlight-text">Dominasi Pasar Dewasa & Remaja (PG-13):</span> Kategori **PG-13** merupakan penyumbang pendapatan terbesar (mencapai lebih dari $15.000), disusul oleh rating **NC-17** di peringkat kedua. Hal ini mengindikasikan bahwa audiens dominan di toko ini bukan anak-anak (rating G), melainkan audiens dewasa.
+2. <span class="highlight-text">Rekomendasi Bisnis:</span> Toko sebaiknya mengalokasikan anggaran *restock* inventory lebih banyak pada judul-judul film dengan rating PG-13 dan NC-17 karena tingginya *turnover rate* (perputaran uang) dari kategori ini.
+</div>
+
+---
+
+## 4. Analisis Kedua: "Star Power" dan Pengaruh Aktor Bintang
+
+Pada bagian ini, kita melihat apakah ada korelasi antara "Aktor yang Produktif" (banyak membintangi film) dengan "Pendapatan yang Dihasilkan". Kita mengambil 100 aktor teratas sebagai populasi sampel analisis.
+
+```{r fetch_data_actor}
+query_actor <- "
+SELECT 
+    a.actor_id,
+    CONCAT(a.first_name, ' ', a.last_name) AS actor_name,
+    COUNT(DISTINCT fa.film_id) AS film_count,
+    COUNT(r.rental_id) AS total_rentals,
+    SUM(p.amount) AS total_revenue
+FROM actor a
+JOIN film_actor fa ON a.actor_id = fa.actor_id
+JOIN film f ON fa.film_id = f.film_id
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+JOIN payment p ON r.rental_id = p.rental_id
+GROUP BY a.actor_id, actor_name
+ORDER BY total_revenue DESC
+LIMIT 100;
+"
+df_actor <- dbGetQuery(conn, query_actor)
+```
+
+### Visualisasi: Korelasi Produktivitas Aktor vs Pendapatan
+
+*Setiap titik ('bubble') mewakili satu aktor. Arahkan kursor Anda untuk melihat siapa aktor di balik angka kesuksesan tersebut.*
+
+```{r viz2_interactive, fig.width=9, fig.height=6}
+# Menghitung korelasi Pearson
+cor_val <- cor(df_actor$film_count, df_actor$total_revenue)
+
+p2 <- ggplot(df_actor, aes(x = film_count, y = total_revenue, 
+                           size = total_rentals, color = total_revenue,
+                           text = paste("Nama Aktor:", actor_name, 
+                                        "<br>Jumlah Film:", film_count, "judul",
+                                        "<br>Total Sewa:", total_rentals, "kali",
+                                        "<br>Total Pendapatan: $", format(total_revenue, big.mark=",")))) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", color = "#e74c3c", se = FALSE, linewidth = 1, linetype = "dashed", show.legend=FALSE) +
+  scale_color_viridis_c(option = "magma", direction = -1) +
+  labs(title = paste("Scatter Plot Produktivitas Aktor vs Pendapatan (r =", round(cor_val, 2), ")"),
+       x = "Produktivitas (Jumlah Film yang Dibintangi)",
+       y = "Total Pendapatan ($)",
+       color = "Pendapatan",
+       size = "Total Disewa") +
+  theme_transparent
+
+ggplotly(p2, tooltip = "text") %>% 
+  layout(paper_bgcolor = 'rgba(0,0,0,0)', plot_bgcolor = 'rgba(0,0,0,0)')
+```
+
+### Tabel Rincian Data Top Aktor (Interaktif)
+
+*Gunakan kolom pencarian ('Search') untuk mencari aktor favorit Anda, atau urutkan data berdasarkan kolom mana pun.*
+
+```{r datatable}
+datatable(df_actor, 
+          options = list(pageLength = 5, autoWidth = TRUE), 
+          colnames = c('ID', 'Nama Aktor', 'Jumlah Film', 'Total Disewa', 'Total Pendapatan ($)'),
+          class = 'cell-border stripe hover') %>%
+  formatCurrency('total_revenue')
+```
+
+### 💡 Interpretasi Analisis "Star Power"
+
+<div class="insight-box">
+Dari hasil analisis *Scatter Plot* dan Tabel, dapat dirangkum beberapa poin berikut:
+
+1. <span class="highlight-text">Korelasi Positif yang Sangat Kuat:</span> Terdapat nilai Korelasi Pearson ($r$) sekitar **0.82**, yang menunjukkan hubungan positif dan sangat kuat antara frekuensi kemunculan aktor di layar (Jumlah Film) dengan perputaran uang sewa film mereka.
+2. <span class="highlight-text">Aktor Penghasil Uang Terbesar:</span> Aktor bernama **Gina Degeneres** dan **Matthew Carrey** berada pada kuadran kanan-atas di grafik. Mereka bukan hanya tampil di lebih dari 40 film, tetapi juga sukses mencetak *revenue* terbesar bagi toko. Ini menegaskan bahwa figur mereka memiliki "Star Power" yang menarik pelanggan untuk terus menyewa.
+3. <span class="highlight-text">Rekomendasi Bisnis:</span> Temuan ini sangat berharga untuk inisiatif *marketing*. Toko dapat membuat promosi khusus seperti pembuatan katalog **"Koleksi Terbaik Matthew Carrey"** atau menempatkan pajangan khusus (*front display*) untuk deretan Aktor Bintang. Upaya ini diprediksi akan secara langsung mendongkrak frekuensi transaksi penyewaan.
+</div>
+
+```{r disconnect}
+# Menutup koneksi database setelah selesai digunakan secara aman
+dbDisconnect(conn)
+```
