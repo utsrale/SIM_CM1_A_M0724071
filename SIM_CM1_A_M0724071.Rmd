@@ -309,8 +309,3 @@ Dari hasil analisis *Scatter Plot* dan Tabel, dapat dirangkum beberapa poin beri
 2. <span class="highlight-text">Aktor Penghasil Uang Terbesar:</span> Aktor bernama **Gina Degeneres** dan **Matthew Carrey** berada pada kuadran kanan-atas di grafik. Mereka bukan hanya tampil di lebih dari 40 film, tetapi juga sukses mencetak *revenue* terbesar bagi toko. Ini menegaskan bahwa figur mereka memiliki "Star Power" yang menarik pelanggan untuk terus menyewa.
 3. <span class="highlight-text">Rekomendasi Bisnis:</span> Temuan ini sangat berharga untuk inisiatif *marketing*. Toko dapat membuat promosi khusus seperti pembuatan katalog **"Koleksi Terbaik Matthew Carrey"** atau menempatkan pajangan khusus (*front display*) untuk deretan Aktor Bintang. Upaya ini diprediksi akan secara langsung mendongkrak frekuensi transaksi penyewaan.
 </div>
-
-```{r disconnect}
-# Menutup koneksi database setelah selesai digunakan secara aman
-dbDisconnect(conn)
-```
