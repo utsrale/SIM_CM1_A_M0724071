@@ -59,6 +59,7 @@ body {
   color: var(--text-main) !important;
   transition: all 0.3s ease;
   padding-top: 20px;
+  overflow-x: hidden !important; /* Mencegah scrollbar horizontal pada seluruh halaman */
 }
 
 h1, h2, h3, h4, h5 {
@@ -83,10 +84,27 @@ p, li {
   color: var(--text-muted);
 }
 
-/* Modifikasi Container Utama Dokumen */
+/* Modifikasi Container Utama Dokumen agar Lebih Lebar (TOC di Paling Kiri) */
 .main-container {
-  max-width: 1100px !important;
-  padding: 0 20px;
+  max-width: 1400px !important;
+  width: 95% !important;
+  padding: 0 20px !important;
+  margin: 0 auto !important;
+}
+
+/* Mengatur agar code block R tidak mendesak lebar halaman */
+pre {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  background-color: var(--table-stripe) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+}
+
+/* Menjaga agar widget HTML (Plotly, DT) responsif di dalam card */
+.html-widget, .plotly, .dataTables_wrapper {
+  max-width: 100% !important;
+  overflow-x: auto !important;
 }
 
 /* Layout Section & Card */
