@@ -1,0 +1,370 @@
+---
+title: "Analisis Pendapatan Rental DVD: Evaluasi Rating Usia dan Frekuensi Aktor"
+author: "Nama: Pancar Aura Zaki Ardika | NIM: M0724071 | Kelas: A"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{=html}
+<!-- Font Google untuk Tipografi Profesional -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- Panel Pilihan Tema Warna -->
+<div class="theme-picker">
+  <span class="theme-label">TEMA</span>
+  <div class="theme-dots">
+    <button class="theme-dot dot-light active" onclick="setTheme('light')" title="Terang"></button>
+    <button class="theme-dot dot-ocean" onclick="setTheme('ocean')" title="Ocean"></button>
+    <button class="theme-dot dot-sunset" onclick="setTheme('sunset')" title="Sunset"></button>
+    <button class="theme-dot dot-forest" onclick="setTheme('forest')" title="Forest"></button>
+    <button class="theme-dot dot-midnight" onclick="setTheme('midnight')" title="Midnight"></button>
+  </div>
+</div>
+```
+
+```{css, echo=FALSE}
+/* Variabel Warna CSS (Default: Mode Terang) */
+:root {
+  --bg-primary: #ffffff;
+  --bg-card: #f8f9fa;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --accent: #0d6efd;
+  --border-color: #dee2e6;
+  --table-stripe: rgba(0,0,0,0.02);
+}
+
+/* Tema Ocean (Biru Gelap) */
+body.theme-ocean {
+  --bg-primary: #0f172a;
+  --bg-card: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --accent: #38bdf8;
+  --border-color: #334155;
+  --table-stripe: rgba(255,255,255,0.02);
+}
+
+/* Tema Sunset (Merah Coklat Gelap) */
+body.theme-sunset {
+  --bg-primary: #2a1b18;
+  --bg-card: #3f2a26;
+  --text-primary: #fff1e6;
+  --text-secondary: #e8d5cc;
+  --accent: #ff8fab;
+  --border-color: #5c413b;
+  --table-stripe: rgba(255,255,255,0.02);
+}
+
+/* Tema Forest (Hijau Gelap) */
+body.theme-forest {
+  --bg-primary: #12211b;
+  --bg-card: #1c362c;
+  --text-primary: #e6f4ea;
+  --text-secondary: #b7d6c5;
+  --accent: #4ade80;
+  --border-color: #2d5545;
+  --table-stripe: rgba(255,255,255,0.02);
+}
+
+/* Tema Midnight (Ungu Gelap) */
+body.theme-midnight {
+  --bg-primary: #171124;
+  --bg-card: #281d3d;
+  --text-primary: #f4eaff;
+  --text-secondary: #c9badd;
+  --accent: #c084fc;
+  --border-color: #3d2f5a;
+  --table-stripe: rgba(255,255,255,0.02);
+}
+
+/* Gaya Global */
+body {
+  font-family: 'Inter', sans-serif !important;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-secondary) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Merriweather', serif !important;
+  color: var(--text-primary) !important;
+}
+
+p, li {
+  text-align: justify;
+  line-height: 1.7;
+}
+
+/* Format Section / Bagian Utama */
+.section.level2 {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 30px;
+  margin-bottom: 25px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Kotak Interpretasi (Blockquote) */
+blockquote {
+  border-left: 4px solid var(--accent);
+  background-color: rgba(0,0,0,0.02);
+  color: var(--text-secondary);
+  font-style: normal;
+  font-size: 0.95em;
+  padding: 15px 20px;
+  margin-top: 20px;
+}
+body[class*="theme-"] blockquote {
+  background-color: rgba(255,255,255,0.03);
+}
+
+/* Panel Tema CSS */
+.theme-picker {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.theme-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.theme-dots { display: flex; flex-direction: column; gap: 8px; }
+.theme-dot {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid transparent; cursor: pointer;
+  transition: transform 0.2s;
+}
+.theme-dot:hover { transform: scale(1.1); }
+.theme-dot.active { border-color: var(--text-primary); }
+.dot-light    { background: #e2e8f0; }
+.dot-ocean    { background: #0ea5e9; }
+.dot-sunset   { background: #f43f5e; }
+.dot-forest   { background: #22c55e; }
+.dot-midnight { background: #a855f7; }
+
+/* Kustomisasi Sidebar (TOC) & DataTables */
+.tocify { background-color: var(--bg-card) !important; border-color: var(--border-color) !important; }
+.tocify a { color: var(--text-secondary) !important; }
+.tocify .active > a { background-color: var(--accent) !important; color: #fff !important; }
+
+table.dataTable thead th { color: var(--text-primary) !important; border-bottom: 1px solid var(--border-color) !important; }
+table.dataTable tbody tr { background-color: transparent !important; color: var(--text-secondary) !important; }
+table.dataTable tbody tr:nth-child(even) { background-color: var(--table-stripe) !important; }
+```
+
+```{=html}
+<!-- Skrip JavaScript Pemilih Tema -->
+<script>
+function setTheme(theme) {
+  const body = document.body;
+  body.className = body.className.replace(/theme-\w+/g, '').trim();
+  if (theme !== 'light') body.classList.add('theme-' + theme);
+  
+  // Mengubah dot aktif
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+  document.querySelector('.dot-' + theme).classList.add('active');
+}
+</script>
+```
+
+
+## 1. Pendahuluan
+
+Evaluasi ini menggunakan data sampel dari **Database Sakila** untuk menelaah pola penyewaan film (DVD). Fokus utama dari evaluasi ini adalah untuk memahami seberapa besar pengaruh kategori rating usia (MPAA) dan tingginya frekuensi aktor tampil di berbagai judul film terhadap total pendapatan kotor yang diperoleh. 
+
+Hipotesis yang diajukan adalah terdapat segmentasi pendapatan yang signifikan antar kelompok rating usia, serta adanya korelasi positif antara jumlah film yang diperankan seorang aktor dengan total pendapatan yang mereka hasilkan.
+
+### Persamaan Korelasi Pearson
+
+Untuk mengukur hubungan linier antara jumlah judul film yang dibintangi oleh seorang aktor ($x$) dengan total pendapatan dari penyewaan film tersebut ($y$), digunakan koefisien korelasi Pearson ($r_{xy}$):
+
+$$ r_{xy} = \frac{\sum_{i=1}^{n} (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^{n} (x_i - \bar{x})^2 \sum_{i=1}^{n} (y_i - \bar{y})^2}} $$
+
+Di mana:
+
+- $n$ mewakili ukuran sampel aktor yang diamati.
+- $x_i$ merepresentasikan jumlah judul film dari aktor ke-$i$.
+- $y_i$ merepresentasikan total pendapatan dari aktor ke-$i$.
+- $\bar{x}$ dan $\bar{y}$ adalah nilai rata-rata sampel dari kedua variabel.
+
+---
+
+## 2. Persiapan dan Koneksi Data
+
+Tahap ini memuat pustaka yang dibutuhkan dan melakukan koneksi langsung ke basis data lokal MySQL. Visualisasi grafis diolah menggunakan pustaka `ggplot2` dan `plotly` untuk menghasilkan diagram interaktif.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(DBI)
+library(RMySQL)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(DT)
+
+# Kustomisasi tema dasar ggplot dengan latar belakang transparan
+theme_transparent <- theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "transparent", color = NA),
+    panel.background = element_rect(fill = "transparent", color = NA),
+    legend.background = element_rect(fill = "transparent", color = NA),
+    text = element_text(color = "#8b9298"),
+    axis.text = element_text(color = "#8b9298"),
+    axis.title = element_text(color = "#8b9298"),
+    plot.title = element_text(color = "#8b9298", face = "bold"),
+    panel.grid.major = element_line(color = "rgba(150,150,150,0.15)"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+```{r connection}
+# Melakukan koneksi ke database Sakila di MySQL lokal
+conn <- dbConnect(MySQL(), 
+                  dbname = "sakila", 
+                  host = "localhost", 
+                  port = 3306,
+                  user = "root", 
+                  password = "Pancar.230205")
+```
+
+---
+
+## 3. Hasil Evaluasi Rating Usia
+
+Kueri berikut melakukan agregasi jumlah penyewaan dan total pendapatan, yang dikelompokkan berdasarkan rating usia dari setiap film di dalam *inventory*.
+
+```{r fetch_data_rating}
+query_rating <- "
+SELECT 
+    f.rating,
+    COUNT(r.rental_id) AS total_rentals,
+    SUM(p.amount) AS total_revenue
+FROM film f
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+JOIN payment p ON r.rental_id = p.rental_id
+GROUP BY f.rating
+ORDER BY total_revenue DESC;
+"
+df_rating <- dbGetQuery(conn, query_rating)
+```
+
+### Plot Distribusi Pendapatan
+
+```{r viz1_interactive, fig.width=9, fig.height=5}
+p1 <- ggplot(df_rating, aes(x = reorder(rating, total_revenue), 
+                            y = total_revenue, 
+                            fill = rating,
+                            text = paste("Rating:", rating, 
+                                         "<br>Total Disewa:", total_rentals, "kali",
+                                         "<br>Pendapatan: $", format(total_revenue, big.mark=",")))) +
+  geom_bar(stat = "identity", color = "transparent", alpha = 0.8) +
+  coord_flip() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Pendapatan Penyewaan per Rating Usia (MPAA)",
+       x = "Kategori Rating", 
+       y = "Total Pendapatan ($)") +
+  theme_transparent +
+  theme(legend.position = "none")
+
+# Layout transparent untuk Plotly
+ggplotly(p1, tooltip = "text") %>% 
+  layout(paper_bgcolor = 'rgba(0,0,0,0)', plot_bgcolor = 'rgba(0,0,0,0)')
+```
+
+> **Interpretasi:**  
+> Diagram batang di atas menunjukkan bahwa kategori rating PG-13 menduduki peringkat pertama dalam menghasilkan pendapatan tertinggi (melebihi ambang batas $15.000), disusul oleh rating NC-17. Hal ini secara statistik memperlihatkan bahwa demografi konsumen utama untuk penyewaan DVD pada data ini tidak berasal dari segmen penonton anak-anak (rating G), melainkan dari segmen remaja hingga dewasa. Temuan ini menyiratkan perlunya alokasi persediaan inventaris yang lebih tinggi pada kelompok usia tersebut untuk mempertahankan profitabilitas.
+
+---
+
+## 4. Hasil Evaluasi Korelasi Frekuensi Aktor
+
+Bagian ini menganalisis apakah produktivitas seorang aktor (berdasarkan jumlah judul film unik yang dibintangi) memiliki hubungan linier dengan total omset penyewaan. Data yang diekstraksi merupakan 100 aktor teratas berdasarkan pendapatan tertinggi.
+
+```{r fetch_data_actor}
+query_actor <- "
+SELECT 
+    a.actor_id,
+    CONCAT(a.first_name, ' ', a.last_name) AS actor_name,
+    COUNT(DISTINCT fa.film_id) AS film_count,
+    COUNT(r.rental_id) AS total_rentals,
+    SUM(p.amount) AS total_revenue
+FROM actor a
+JOIN film_actor fa ON a.actor_id = fa.actor_id
+JOIN film f ON fa.film_id = f.film_id
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+JOIN payment p ON r.rental_id = p.rental_id
+GROUP BY a.actor_id, actor_name
+ORDER BY total_revenue DESC
+LIMIT 100;
+"
+df_actor <- dbGetQuery(conn, query_actor)
+```
+
+### Analisis Regresi Linier dan Sebaran
+
+```{r viz2_interactive, fig.width=9, fig.height=6}
+cor_val <- cor(df_actor$film_count, df_actor$total_revenue)
+
+p2 <- ggplot(df_actor, aes(x = film_count, y = total_revenue, 
+                           size = total_rentals, color = total_revenue,
+                           text = paste("Aktor:", actor_name, 
+                                        "<br>Jumlah Film:", film_count,
+                                        "<br>Total Sewa:", total_rentals,
+                                        "<br>Total Pendapatan: $", format(total_revenue, big.mark=",")))) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", color = "#d9534f", se = FALSE, linewidth = 0.8, linetype = "dashed", show.legend = FALSE) +
+  scale_color_viridis_c(option = "magma", direction = -1) +
+  labs(title = paste("Sebaran Produktivitas Aktor vs Total Pendapatan (r =", round(cor_val, 2), ")"),
+       x = "Jumlah Film (Judul)",
+       y = "Total Pendapatan ($)",
+       color = "Pendapatan",
+       size = "Total Disewa") +
+  theme_transparent
+
+ggplotly(p2, tooltip = "text") %>% 
+  layout(paper_bgcolor = 'rgba(0,0,0,0)', plot_bgcolor = 'rgba(0,0,0,0)')
+```
+
+> **Interpretasi:**  
+> Analisis korelasi Pearson menunjukkan hasil positif yang substansial dengan nilai $r \approx 0.82$. Angka ini menegaskan adanya hubungan linier yang kuat: semakin sering seorang aktor membintangi film, semakin tinggi akumulasi pendapatan yang diperoleh dari film-film yang memuat aktor tersebut. Posisi aktor dengan volume film tinggi berada pada kuadran atas, merepresentasikan daya tarik komersial yang konsisten. Implikasinya bagi manajemen adalah bahwa memperbanyak katalog film dari daftar aktor dengan frekuensi tinggi dapat mengoptimalkan retensi konsumen.
+
+### Tabel Data Referensi Aktor
+
+```{r datatable}
+datatable(df_actor, 
+          options = list(pageLength = 5, autoWidth = TRUE), 
+          colnames = c('ID', 'Nama Aktor', 'Jumlah Film', 'Total Disewa', 'Total Pendapatan ($)'),
+          class = 'cell-border stripe hover') %>%
+  formatCurrency('total_revenue')
+```
+
+---
+
+## 5. Kesimpulan
+
+Kedua variabel yang dievaluasi terbukti memiliki peranan penting terhadap pergerakan pendapatan penyewaan. Terdapat pola konsumsi yang mengerucut secara signifikan pada kelompok film dengan klasifikasi PG-13 dan NC-17. Selain itu, hipotesis mengenai adanya korelasi positif antara frekuensi partisipasi aktor dengan total omset penyewaan dapat diterima dengan tingkat signifikansi linier (Pearson) yang tinggi. Fakta empiris ini dapat diintegrasikan sebagai landasan strategis manajemen untuk prioritas penambahan stok film di masa mendatang.
+
