@@ -119,33 +119,41 @@ pre {
   transition: all 0.3s ease;
 }
 
-/* Tombol Pengubah Tema */
+/* Tombol Pengubah Tema - Format Tab Vertikal Melayang di Kanan */
 .header-control {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
   z-index: 1050;
 }
 
 .theme-toggle-btn {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
+  border-right: none !important; /* Rata dengan pinggir layar */
   color: var(--text-main);
-  padding: 10px 18px;
-  border-radius: 9999px;
-  font-weight: 500;
-  font-size: 0.875rem;
+  padding: 15px 8px;
+  border-radius: 12px 0 0 12px; /* Melengkung hanya di sisi kiri */
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   cursor: pointer;
   box-shadow: var(--kpi-shadow);
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
+  writing-mode: vertical-rl; /* Tulisan mengalir vertikal */
+  text-orientation: mixed;
   transition: all 0.2s ease;
 }
 
 .theme-toggle-btn:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent);
+  transform: translateX(-4px); /* Efek bergeser sedikit ke kiri saat disorot */
+  background-color: var(--accent-light);
+  color: var(--accent);
 }
 
 /* Dashboard KPI Grid */
